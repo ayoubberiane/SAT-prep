@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAT Prep Quiz Game</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            padding: 50px;
+            overflow-x: hidden;
+        }
+
+        #welcome-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #quiz-container {
+            display: none;
+            max-width: 800px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: relative;
+        }
+
+        h1 {
+            color: #ff4500;
+            font-size: 3em; /* Increased font size for welcome text */
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+
+        h1:hover {
+            color: #ff6347;
+        }
+
+        p {
+            font-size: 1.2em; /* Adjust paragraph size if needed */
+        }
+
+        #welcome-button {
+            font-size: 1.2em;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #32cd32;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #welcome-button:hover {
+            background-color: #228b22;
+        }
+
+        #question-container {
+            margin-bottom: 20px;
+            transition: opacity 0.3s ease;
+        }
+
+        #question {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        button {
+            font-size: 1em;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #32cd32;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #228b22;
+        }
+
+        #feedback {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        #score {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        #final-score {
+            display: none;
+            font-size: 2em;
+            color: #ff4500;
+        }
+
+        #personalized-feedback {
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+
+        #timer {
+            font-size: 1.2em;
+            margin-top: 20px;
+            color: #ff4500;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="welcome-container">
+        <h1>Welcome to the SAT Prep Quiz Game!</h1>
+        <p>Click the button below to start the quiz.</p>
+        <button id="welcome-button">Start Quiz</button>
+        <audio id="welcome-sound" src="welcome-sound.mp3" preload="auto"></audio>
+    </div>
+    <div id="quiz-container">
+        <h1>SAT Prep Quiz Game</h1>
+        <div id="timer">Time Left: <span id="timerValue">30</span> seconds</div>
+        <div id="question-container">
+            <div id="question"></div>
+            <ul id="choices"></ul>
+        </div>
+        <div id="feedback"></div>
+        <button id="nextQuestion">Next Question</button>
+        <div id="score">
+            <p>Score: <span id="scoreValue">0</span></p>
+            <p>Question <span id="questionNumber">1</span> of <span id="totalQuestions">20</span></p>
+        </div>
+        <div id="final-score">
+            <p>Your final score is: <span id="finalScoreValue">0</span> out of 20</p>
+            <div id="personalized-feedback"></div>
+            <button onclick="restartQuiz()">Restart Quiz</button>
+        </div>
+    </div>
+    <script>
+        // Sound effect
+        document.getElementById('welcome-sound').play();
+
+        // Switch to quiz interface
+        document.getElementById('welcome-button').onclick = function() {
+            document.getElementById('welcome-container').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'block';
+            displayQuestion();
+            startTimer();
+        };
+
+        // Quiz functionality
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const maxQuestions = 20;
+        const questionTimer = 30;
+        let timer;
+
+        async function loadQuestions() {
+            const response = await fetch('questions.json');
+            questions = await response.json();
+        }
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= maxQuestions) {
+                endQuiz();
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            document.getElementById('question').innerText = question.question;
+
+            const choicesList = document.getElementById('choices');
+            choicesList.innerHTML = '';
+
+            question.choices.forEach(choice => {
+                const li = document.createElement('li');
+                const button = document.createElement('button');
+                button.innerText = choice;
+                button.onclick = () => checkAnswer(choice);
+                li.appendChild(button);
+                choicesList.appendChild(li);
+            });
+
+            document.getElementById('questionNumber').innerText = currentQuestionIndex + 1;
+            document.getElementById('totalQuestions').innerText = maxQuestions;
+        }
+
+        function checkAnswer(selectedChoice) {
+            const question = questions[currentQuestionIndex];
+            const feedback = document.getElementById('feedback');
+
+            if (selectedChoice === question.answer) {
+                feedback.innerText = 'Correct!';
+                score++;
+                document.getElementById('scoreValue').innerText = score;
+                playSound('correct-answer.mp3');
+            } else {
+                feedback.innerText = 'Incorrect. Try again!';
+                playSound('incorrect-answer.mp3');
+            }
+
+            // Move to next question
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        function playSound(src) {
+            const audio = new Audio(src);
+            audio.play();
+        }
+
+        function startTimer() {
+            let timeLeft = questionTimer;
+            document.getElementById('timerValue').innerText = timeLeft;
+
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timerValue').innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        function endQuiz() {
+            clearInterval(timer);
+            document.getElementById('quiz-container').style.display = 'none';
+            const finalScore = document.getElementById('finalScoreValue');
+            finalScore.innerText = score;
+
+            const feedback = document.getElementById('personalized-feedback');
+            if (score > 15) {
+                feedback.innerHTML = 'Excellent job! 😊';
+            } else if (score > 10) {
+                feedback.innerHTML = 'Great job! 🙂';
+            } else {
+                feedback.innerHTML = 'You can do better! 😔';
+            }
+
+            document.getElementById('final-score').style.display = 'block';
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('scoreValue').innerText = score;
+            document.getElementById('final-score').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'block';
+            displayQuestion();
+            startTimer();
+        }
+
+        document.getElementById('nextQuestion').onclick = displayQuestion;
+
+        // Load questions on page load
+        loadQuestions();
+    </script>
+</body>
+</html>
