@@ -14,7 +14,7 @@
             overflow-x: hidden;
         }
 
-        #welcome-container {
+        #welcome-container, #quiz-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -24,18 +24,11 @@
 
         #quiz-container {
             display: none;
-            max-width: 800px;
-            margin: auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            position: relative;
         }
 
         h1 {
             color: #ff4500;
-            font-size: 3em; /* Increased font size for welcome text */
+            font-size: 3em;
             margin-bottom: 20px;
             transition: color 0.3s ease;
         }
@@ -45,10 +38,10 @@
         }
 
         p {
-            font-size: 1.2em; /* Adjust paragraph size if needed */
+            font-size: 1.2em;
         }
 
-        #welcome-button {
+        button {
             font-size: 1.2em;
             padding: 10px 20px;
             border: none;
@@ -59,13 +52,12 @@
             transition: background-color 0.3s ease;
         }
 
-        #welcome-button:hover {
+        button:hover {
             background-color: #228b22;
         }
 
         #question-container {
             margin-bottom: 20px;
-            transition: opacity 0.3s ease;
         }
 
         #question {
@@ -80,21 +72,6 @@
 
         li {
             margin: 10px 0;
-        }
-
-        button {
-            font-size: 1em;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background-color: #32cd32;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #228b22;
         }
 
         #feedback {
@@ -127,12 +104,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Welcome Container -->
     <div id="welcome-container">
         <h1>Welcome to the SAT Prep Quiz Game!</h1>
         <p>Click the button below to start the quiz.</p>
         <button id="welcome-button">Start Quiz</button>
+        <!-- Audio for welcome sound -->
         <audio id="welcome-sound" src="welcome-sound.mp3" preload="auto"></audio>
     </div>
+
+    <!-- Quiz Container -->
     <div id="quiz-container">
         <h1>SAT Prep Quiz Game</h1>
         <div id="timer">Time Left: <span id="timerValue">30</span> seconds</div>
@@ -152,19 +133,9 @@
             <button onclick="restartQuiz()">Restart Quiz</button>
         </div>
     </div>
+
     <script>
-        // Sound effect
-        document.getElementById('welcome-sound').play();
-
-        // Switch to quiz interface
-        document.getElementById('welcome-button').onclick = function() {
-            document.getElementById('welcome-container').style.display = 'none';
-            document.getElementById('quiz-container').style.display = 'block';
-            displayQuestion();
-            startTimer();
-        };
-
-        // Quiz functionality
+        // Initialize variables
         let questions = [];
         let currentQuestionIndex = 0;
         let score = 0;
@@ -172,11 +143,23 @@
         const questionTimer = 30;
         let timer;
 
+        // Play welcome sound when the page loads
+        document.getElementById('welcome-sound').play();
+
+        // Function to load questions from JSON file
         async function loadQuestions() {
-            const response = await fetch('questions.json');
-            questions = await response.json();
+            try {
+                const response = await fetch('questions.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load questions');
+                }
+                questions = await response.json();
+            } catch (error) {
+                console.error('Error loading questions:', error);
+            }
         }
 
+        // Function to display the current question and choices
         function displayQuestion() {
             if (currentQuestionIndex >= maxQuestions) {
                 endQuiz();
@@ -202,6 +185,7 @@
             document.getElementById('totalQuestions').innerText = maxQuestions;
         }
 
+        // Function to check if the selected answer is correct
         function checkAnswer(selectedChoice) {
             const question = questions[currentQuestionIndex];
             const feedback = document.getElementById('feedback');
@@ -216,16 +200,18 @@
                 playSound('incorrect-answer.mp3');
             }
 
-            // Move to next question
+            // Move to the next question
             currentQuestionIndex++;
             displayQuestion();
         }
 
+        // Function to play a sound
         function playSound(src) {
             const audio = new Audio(src);
             audio.play();
         }
 
+        // Function to start the quiz timer
         function startTimer() {
             let timeLeft = questionTimer;
             document.getElementById('timerValue').innerText = timeLeft;
@@ -241,6 +227,7 @@
             }, 1000);
         }
 
+        // Function to end the quiz and display the final score
         function endQuiz() {
             clearInterval(timer);
             document.getElementById('quiz-container').style.display = 'none';
@@ -259,6 +246,7 @@
             document.getElementById('final-score').style.display = 'block';
         }
 
+        // Function to restart the quiz
         function restartQuiz() {
             currentQuestionIndex = 0;
             score = 0;
@@ -269,9 +257,18 @@
             startTimer();
         }
 
+        // Event listener for the "Start Quiz" button
+        document.getElementById('welcome-button').onclick = function() {
+            document.getElementById('welcome-container').style.display = 'none';
+            document.getElementById('quiz-container').style.display = 'block';
+            displayQuestion();
+            startTimer();
+        };
+
+        // Event listener for the "Next Question" button
         document.getElementById('nextQuestion').onclick = displayQuestion;
 
-        // Load questions on page load
+        // Load questions when the page loads
         loadQuestions();
     </script>
 </body>
